@@ -6,42 +6,10 @@ import Header from '../header/header';
 import Preview from '../preview/preview';
 import styles from './maker.module.css';
 
-const Maker = ({ FileInput, authService }) => {
-    const [cards, setCards] = useState({
-        1: {
-            id: '1',
-            name: 'Pyeonne',
-            company: 'DAY1COMPANY',
-            theme: 'dark',
-            title: 'Frontend Developer',
-            email: 'pyeonne@gmail.com',
-            message: 'go for it',
-            fileName: 'pyeonne',
-            fileURL: null,
-        },
-        2: {
-            id: '2',
-            name: 'Pyeonne',
-            company: 'DAY1COMPANY',
-            theme: 'light',
-            title: 'Frontend Developer',
-            email: 'pyeonne@gmail.com',
-            message: 'go for it',
-            fileName: 'pyeonne',
-            fileURL: 'pyeonne.png',
-        },
-        3: {
-            id: '3',
-            name: 'Pyeonne',
-            company: 'DAY1COMPANY',
-            theme: 'colorful',
-            title: 'Frontend Developer',
-            email: 'pyeonne@gmail.com',
-            message: 'go for it',
-            fileName: 'pyeonne',
-            fileURL: null,
-        },
-    });
+const Maker = ({ FileInput, authService, cardRepository }) => {
+    const navigateState = useNavigate().state;
+    const [cards, setCards] = useState({});
+    const [userId, setUserId] = useState(navigateState && navigateState.id);
 
     const navigate = useNavigate();
     const onLogout = () => {
@@ -49,19 +17,32 @@ const Maker = ({ FileInput, authService }) => {
     };
 
     useEffect(() => {
+        if (!userId) {
+            return;
+        }
+        const stopSync = cardRepository.syncCards(userId, cards => {
+            setCards(cards);
+        });
+        return () => stopSync();
+    }, [userId]);
+
+    useEffect(() => {
         authService.onAuthChange(user => {
-            if (!user) {
+            if (user) {
+                setUserId(user.uid);
+            } else {
                 navigate('/');
             }
         });
     });
 
-    const createOrupdateCard = card => {
+    const createOrUpdateCard = card => {
         setCards(cards => {
             const updated = { ...cards };
             updated[card.id] = card;
             return updated;
         });
+        cardRepository.saveCard(userId, card);
     };
 
     const deleteCard = card => {
@@ -70,6 +51,7 @@ const Maker = ({ FileInput, authService }) => {
             delete updated[card.id];
             return updated;
         });
+        cardRepository.removeCard(userId, card);
     };
 
     return (
@@ -79,8 +61,8 @@ const Maker = ({ FileInput, authService }) => {
                 <Editor
                     FileInput={FileInput}
                     cards={cards}
-                    addCard={createOrupdateCard}
-                    updateCard={createOrupdateCard}
+                    addCard={createOrUpdateCard}
+                    updateCard={createOrUpdateCard}
                     deleteCard={deleteCard}
                 />
                 <Preview cards={cards} />
