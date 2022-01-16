@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Editor from '../editor/editor';
 import Footer from '../footer/footer';
@@ -12,9 +12,9 @@ const Maker = ({ FileInput, authService, cardRepository }) => {
     const [userId, setUserId] = useState(navigateState && navigateState.id);
 
     const navigate = useNavigate();
-    const onLogout = () => {
+    const onLogout = useCallback(() => {
         authService.logout();
-    };
+    }, [authService]);
 
     useEffect(() => {
         if (!userId) {
